@@ -61,31 +61,31 @@ bullet_state = "ready"
 
 # Score
 score_value = 0
-font = pygame.font.Font("freesansbold.ttf", 32)
+font = pygame.font.Font("8-BIT WONDER.TTF", 32)
 
 # give it x and y cordinates of where you want it
 textX = 10
 textY = 40
 
 # Button images
-resume_img = pygame.image.load("button_resume.png").convert_alpha()
-options_img = pygame.image.load("button_options.png").convert_alpha()
-quit_img = pygame.image.load("button_quit.png").convert_alpha()
-quit_img2 = pygame.image.load("quitpix.png").convert_alpha()
-start_img = pygame.image.load("startpix.png").convert_alpha()
-on_img = pygame.image.load("ON.png").convert_alpha()
-off_img = pygame.image.load("OFF.png").convert_alpha()
-back_img = pygame.image.load("back.png").convert_alpha()
+resume_img = pygame.image.load("resumeredo.png").convert_alpha()
+options_img = pygame.image.load("optionsredo.png").convert_alpha()
+quit_img = pygame.image.load("quitredo.png").convert_alpha()
+quit_img2 = pygame.image.load("quitredo.png").convert_alpha()
+start_img = pygame.image.load("startredo.png").convert_alpha()
+on_img = pygame.image.load("onredo.png").convert_alpha()
+off_img = pygame.image.load("offredo.png").convert_alpha()
+back_img = pygame.image.load("backredo.png").convert_alpha()
 
 # Create button instances
-resume_button = button.Button(300, 150, resume_img, 1)
-options_button = button.Button(300, 275, options_img, 1)
-quit_button = button.Button(300, 400, quit_img, 1)
-quit_button2 = button.Button(300, 250, quit_img2, 1)
-start_button = button.Button(300, 150, start_img, 1)
-on_button = button.Button(225, 200, on_img, 1.5)
-off_button = button.Button(425, 200, off_img, 1.5)
-back_button = button.Button(325, 325, back_img, 1)
+resume_button = button.Button(250, 150, resume_img, 1)
+options_button = button.Button(250, 275, options_img, 1)
+quit_button = button.Button(250, 400, quit_img, 1)
+quit_button2 = button.Button(300, 300, quit_img2, 1)
+start_button = button.Button(275, 200, start_img, 1)
+on_button = button.Button(250, 200, on_img, 1)
+off_button = button.Button(425, 200, off_img, 1)
+back_button = button.Button(300, 325, back_img, 1)
 
 # Game States
 menu_state = "main"
@@ -94,19 +94,21 @@ start_menu = True
 audio_state = False
 
 # Game Over text
-over_font = pygame.font.Font("freesansbold.ttf", 64)
+over_font = pygame.font.Font("8-BIT WONDER.TTF", 64)
 
+# Title screen font
+title_font = pygame.font.Font("8-BIT WONDER.TTF", 54)
 
 def game_over_text():
     # Render text using font
     over_text = over_font.render("GAME OVER", True, (255, 255, 255))
     # Blit to the screen
-    screen.blit(over_text, (200, 250))
+    screen.blit(over_text, (100, 250))
 
 
 def show_score(x, y):
     # Render text using font
-    score = font.render("Score: " + str(score_value), True, (255, 255, 255))
+    score = font.render("Score " + str(score_value), True, (255, 255, 255))
     # Blit to the screen
     screen.blit(score, (x, y))
 
@@ -147,6 +149,8 @@ while running:
     # Background Image
     screen.blit(background, (0, 0))
     if start_menu:
+        title = title_font.render("SPACE INVADERS", True, (255, 255, 255))
+        screen.blit(title, (50, 100))
         if start_button.draw(screen):
             start_menu = False
         if quit_button2.draw(screen):
