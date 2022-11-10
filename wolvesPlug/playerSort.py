@@ -1,4 +1,4 @@
-# playerSort.py - sorts players into their respective folders
+# playerSort.py - sorts players into their respective folders based on their file name 
 
 import os
 import pyautogui

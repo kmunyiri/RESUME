@@ -1,4 +1,4 @@
-# pngRemover.py - removes png from an image in a given folder
+# pngRemover.py - program that uses GUI to turn photos into a transparent png 
 
 import os
 import pyautogui
