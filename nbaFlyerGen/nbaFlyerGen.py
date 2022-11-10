@@ -1,12 +1,12 @@
-# wolvesPlug - usage: wolvesPlug.py date team
+# nbaFlyerGen - usage: nbaFlyerGen.py date team
 
-# if wolvesPlug today Timberwolves - will Timberwolves for current day
+# if nbaFlyerGen today Timberwolves - will Timberwolves for current day
 
-# if wolvesPlug Nov 11 Timberwolves - will make flyer for Timberwolves for Nov 11
+# if nbaFlyerGen Nov 11 Timberwolves - will make flyer for Timberwolves for Nov 11
 
-# if wolvesPlug today all - will make flyers for every game that day
+# if nbaFlyerGen today all - will make flyers for every game that day
 
-# if wolvesPlug Nov 11 all - will make flyer for every game on NOV 11
+# if nbaFlyerGen Nov 11 all - will make flyer for every game on NOV 11
 
 
 import bs4
@@ -315,7 +315,7 @@ elif len(sys.argv) == 3:
     d = sys.argv[1]
     t = sys.argv[2]
 else:
-    print(" Please follow the format - wolvesPlug date team ie wolvesPlug Nov 11 Timberwolves")
+    print(" Please follow the format - nbaFlyerGen date team ie nbaFlyerGen Nov 11 Timberwolves")
     sys.exit()
 
 if d.lower() == "today":
