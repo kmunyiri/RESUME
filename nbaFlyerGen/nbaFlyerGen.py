@@ -43,42 +43,39 @@ def fileFinder(path):
         raise FileNotFoundError
 
 
-def smart_resize(input_image, new_size):
-    """ Attempt to standardize pngs of the given image object"""
-    width = input_image.width
-    height = input_image.height
+def aspectResizeLogo(logo, size):
+    """ Helps resize logos accordingly """
+    # wider than it is tall
+    width, height = logo.size
+    # if width / height > 1:
+    ratio = width / height
+    return logo.resize((int(ratio * size), size))
 
-    # Image is portrait or square
-    if height >= width:
-        crop_box = (0, (height - width) // 2, width, (height - width) // 2 + width)
-        return input_image.resize(size=(new_size, new_size),
-                                  box=crop_box)
+def aspectResize(image, size):
+    """Given a player image and a size it will adjust the image accordingly so they are close in scale"""
+    # images given will be generally square or have a smaller with in comparison to height; also it will occupy a 450x800 space roughly 
+    image = cropImage(image)
+    width, height = image.size
+    if width / height > 1:
+        # make em skinny - ie. 1800/1000 = 1.8 so we would wanna reduce the width
+        ratio = height / width
+        newWidth = int(ratio * size)
+        return image.resize((newWidth, size))
 
-    # Image is landscape
-    if width > height:
-        crop_box = ((width - height) // 2, 0, (width - height) // 2 + height, height)
+    elif width / height < 1:
+        # thicken em up - ie. 1000/1800 = 0.8 so we would wanna increase the height
+        ratio = width / height
+        newHeight = int(ratio * size)
+        return image.resize((newHeight, size))
 
-        return input_image.resize(size=(new_size, new_size),
-                                  box=crop_box)
+    else:
+        return image.resize((size, size))
 
-
-def playerResize(player, size):
-    width, height = player.size
-    ratio1 = width / height
-    ratio2 = height / width
-    newWidth = 450
-    newHeight = 800
-
-    # If square just resize
-    if width / height < 1.5:
-        return smart_resize(player, 550)
-
-    elif height > newHeight:
-        return player.resize((int(ratio1 * newHeight), newHeight))
-    elif width > newWidth:
-        return player.resize((newWidth, int(ratio2 * newWidth)))
-
-
+def cropImage(image):
+    """ Returns cropped version of image for optimal sizing"""
+    imageBox = image.getbbox()
+    return image.crop(imageBox)
+    
 def getTeamName(team):
     """ Given full City and Team Name will return only Team Name"""
     # teamName = ""
@@ -126,14 +123,14 @@ def getStats(df):
     szn = "2022-23"
     stats = {}
     s = 0
-    for i in range(len(df[1])):
-        if df[1].loc[i][0] == szn:
+    for i in range(len(df[0])):
+        if df[0].loc[i][0] == szn:
             # print(df[1].loc[i])
             s = i
     # print(df1[1].loc[s])
-    stats["PTS"] = df[1].loc[s][29]
-    stats["REB"] = df[1].loc[s][23]
-    stats["AST"] = df[1].loc[s][24]
+    stats["PTS"] = df[0].loc[s][29]
+    stats["REB"] = df[0].loc[s][23]
+    stats["AST"] = df[0].loc[s][24]
 
     return stats
 
@@ -160,7 +157,7 @@ def wikiLogo(name):
     r = requests.get(link)
     r.raise_for_status()
     teamName = getTeamName(name)
-    iFile = open(os.path.join(teamName, "logo.jpg"), "wb")
+    iFile = open(os.path.join("Teams",teamName, "logo.jpg"), "wb")
 
     for chunk in r.iter_content(100000):
         iFile.write(chunk)
@@ -171,12 +168,12 @@ def wikiLogo(name):
 
 def getLogo(team):
     """Given a team will retrieve its logo open it as an image which is returned """
-    if os.path.exists(os.path.join(getTeamName(team), "logo.jpg")):
-        logo = Image.open(os.path.join(getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
+    if os.path.exists(os.path.join("Teams",getTeamName(team), "logo.jpg")):
+        logo = Image.open(os.path.join("Teams",getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
     else:
         wikiLogo(team)
-        logo = Image.open(os.path.join(getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
-    return logo
+        logo = Image.open(os.path.join("Teams",getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
+    return aspectResizeLogo(logo,120)
 
 
 def getRecord(team):
@@ -213,20 +210,20 @@ def makeFlyer(match):
 
     position = ["PG", "SG", "SF", "PF", "C"]
     try:
-        filename1 = fileFinder(os.path.join(teamName1, position1))
+        filename1 = fileFinder(os.path.join("Teams", teamName1, position1))
     except FileNotFoundError:
-        while not os.path.exists(os.path.join(teamName1, position1)):
+        while not os.path.exists(os.path.join("Teams",teamName1, position1)):
             print(f"There is no {position1} in {teamName1}")
             position1 = random.choice(position)
-        filename1 = fileFinder(os.path.join(teamName1, position1))
+        filename1 = fileFinder(os.path.join("Teams",teamName1, position1))
 
     try:
-        filename2 = fileFinder(os.path.join(teamName2, position2))
+        filename2 = fileFinder(os.path.join("Teams",teamName2, position2))
     except FileNotFoundError:
-        while not os.path.exists(os.path.join(teamName2, position2)):
+        while not os.path.exists(os.path.join("Teams",teamName2, position2)):
             print(f"There is no {position2} in {teamName2}")
             position2 = random.choice(position)
-        filename2 = fileFinder(os.path.join(teamName2, position2))
+        filename2 = fileFinder(os.path.join("Teams",teamName2, position2))
 
     name1 = filename1.split(".")[0]
     name2 = filename2.split(".")[0]
@@ -243,12 +240,12 @@ def makeFlyer(match):
     stats2 = getStats(df2)
 
     # Load player images
-    player1 = Image.open(os.path.join(teamName1, position1, filename1)).convert("RGBA")
-    player2 = Image.open(os.path.join(teamName2, position2, filename2)).convert("RGBA")
+    player1 = Image.open(os.path.join("Teams",teamName1, position1, filename1)).convert("RGBA")
+    player2 = Image.open(os.path.join("Teams",teamName2, position2, filename2)).convert("RGBA")
 
     # Size them appropriately
-    player1 = smart_resize(player1, 550)
-    player2 = smart_resize(player2, 550)
+    player1 = aspectResize(player1, 550)
+    player2 = aspectResize(player2, 550)
 
     draw = ImageDraw.Draw(im)  # make Draw object
     font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 30)
@@ -315,7 +312,7 @@ elif len(sys.argv) == 3:
     d = sys.argv[1]
     t = sys.argv[2]
 else:
-    print(" Please follow the format - nbaFlyerGen date team ie nbaFlyerGen Nov 11 Timberwolves")
+    print(" Please follow the format: nbaFlyerGen.py date team ie. nbaFlyerGen.py Nov 11 Timberwolves")
     sys.exit()
 
 if d.lower() == "today":
