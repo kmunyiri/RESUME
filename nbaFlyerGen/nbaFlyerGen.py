@@ -28,7 +28,25 @@ import time
 import pprint
 
 teams = threeLetterTeams.teams
+# Make change later to reflect more positionless nature of the NBA
+position = ["PG", "SG", "SF", "PF", "C"]
 
+def getArguments():
+    """ Gets arguments for date and team. Also handles formatting of dates """
+    if len(sys.argv) == 4:
+        d = sys.argv[1] + " " + sys.argv[2]
+        t = sys.argv[3]
+    elif len(sys.argv) == 3:
+        d = sys.argv[1]
+        t = sys.argv[2]
+    else:
+        print(" Please follow the format: nbaFlyerGen.py date team ie. nbaFlyerGen.py Nov 11 Timberwolves")
+        sys.exit()
+    if d.lower() == "today":
+        day = int(today.strftime("%d"))
+        m = today.strftime("%b")
+        d = m + " " + str(day)
+    return d,t 
 
 def fileFinder(path):
     """ Given a path will return a random file in the folder """
@@ -42,6 +60,27 @@ def fileFinder(path):
         print(f"{path} does not exist. Try a different position")
         raise FileNotFoundError
 
+def searchPosition(team, p):
+    """ Given a team and position it will return a filename for a player of a certain position
+     if it cant find one it will search until it finds something """
+     
+    while not os.path.exists(os.path.join("Teams",team, p)):
+        print(f"There is no {p} in {team}")
+        p = random.choice(position)
+    filename = fileFinder(os.path.join("Teams",team, p))
+    return [filename, p]
+   
+def getPage(time):
+    """Given date it will format and return the proper link to scrape """
+    month = datetime.strptime(time, "%b %d")
+    month = month.strftime("%B").lower()
+
+    if month != "October":
+        dataframe = pd.read_html(f"https://www.basketball-reference.com/leagues/NBA_2023_games-{month}.html")
+    else:
+        dataframe = pd.read_html("https://www.basketball-reference.com/leagues/NBA_2023_games.html")
+
+    return dataframe
 
 def aspectResizeLogo(logo, size):
     """ Helps resize logos accordingly """
@@ -52,7 +91,7 @@ def aspectResizeLogo(logo, size):
     return logo.resize((int(ratio * size), size))
 
 def aspectResize(image, size):
-    """Given a player image and a size it will adjust the image accordingly so they are close in scale"""
+    """ Given a player image and a size it will adjust the image accordingly so they are close in scale """
     # images given will be generally square or have a smaller with in comparison to height; also it will occupy a 450x800 space roughly 
     image = cropImage(image)
     width, height = image.size
@@ -72,18 +111,47 @@ def aspectResize(image, size):
         return image.resize((size, size))
 
 def cropImage(image):
-    """ Returns cropped version of image for optimal sizing"""
+    """ Returns cropped version of image for optimal sizing """
     imageBox = image.getbbox()
     return image.crop(imageBox)
     
 def getTeamName(team):
-    """ Given full City and Team Name will return only Team Name"""
+    """ Given full City and Team Name will return only Team Name """
     # teamName = ""
     if len(team.split()) < 3:
         return team.split()[1]
     else:
         return team.split()[2]
+def getArenaName(arena):
+    """Given an arena name it breaks it up for formatting purposes [Arena Name, Arena Type]"""
+    if len(arena.split()) == 3:
+        return [arena.split()[0] + " " + arena.split()[1], arena.split()[2]]
+    else:
+        return [arena.split()[0], arena.split()[1]]
 
+def getGames(df, search, team):
+    """ Returns list of dictionaries representing information about matches for given date for team depending on arguments """
+    games = []
+    for i in range(len(df[0])):
+        date = df[0].loc[i][0].split(",")
+        match = {}
+        if search == date[1].strip() and team == "All":
+            print(f"{df[0].loc[i][2]} v. {df[0].loc[i][4]} ")
+            match["date"] = df[0].loc[i][0]
+            match["visiting team"] = df[0].loc[i][2]
+            match["home team"] = df[0].loc[i][4]
+            match["arena"] = df[0].loc[i][9]
+            games.append(match)
+
+        if search == date[1].strip() and (team in df[0].loc[i][2] or team in df[0].loc[i][4]):
+            print(f"{df[0].loc[i][2]} v. {df[0].loc[i][4]} ")
+
+            match["date"] = df[0].loc[i][0]
+            match["visiting team"] = df[0].loc[i][2]
+            match["home team"] = df[0].loc[i][4]
+            match["arena"] = df[0].loc[i][9]
+            games.append(match)
+    return games
 
 def getPlayer(name, team):
     """ Given player and team that he plays for returns link to player on basketball-reference"""
@@ -134,9 +202,21 @@ def getStats(df):
 
     return stats
 
+# def printStats(s):
+
+#     i = 0
+#     for key, value in s.items():
+#         stat = f"{str(value)} {key}"
+#         draw.text((450 / 2, 850 + i), stat, fill="black", font=font, anchor="mm")
+#         i += 50
+#     i = 0
+#     for key, value in stats2.items():
+#         stat = f"{str(value)} {key}"
+#         draw.text((855, 850 + i), stat, fill="black", font=font, anchor="mm")
+#         i += 50
 
 def wikiLogo(name):
-    """Retrieves Logo from Wikipedia page"""
+    """ Retrieves Logo from Wikipedia page """
     url = "https://en.wikipedia.org/wiki/"
     team = name.split()
     wikiName = "_".join(team)
@@ -167,7 +247,7 @@ def wikiLogo(name):
 
 
 def getLogo(team):
-    """Given a team will retrieve its logo open it as an image which is returned """
+    """ Given a team will retrieve its logo open it as an image which is returned """
     if os.path.exists(os.path.join("Teams",getTeamName(team), "logo.jpg")):
         logo = Image.open(os.path.join("Teams",getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
     else:
@@ -175,6 +255,21 @@ def getLogo(team):
         logo = Image.open(os.path.join("Teams",getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
     return aspectResizeLogo(logo,120)
 
+def leagueLogo(image):
+    logo = Image.open("nbaLogo.png").convert("RGBA")
+    logo = logo.resize((100, 180))
+    w4, h4 = logo.size
+    image.paste(logo, (int((1080 - w4) / 2), 880), logo)
+
+
+def logoPaste(visit,home,image):
+    logo1 = getLogo(visit)
+    vW, vH = logo1.size
+    image.paste(logo1, (int((1080 - vW) / 2), 300), logo1)
+
+    logo2 = getLogo(home)
+    hW, hH = logo2.size
+    image.paste(logo2, (int((1080 - hW) / 2), 610), logo2)
 
 def getRecord(team):
     """ Given team retrieves current record """
@@ -193,14 +288,21 @@ def getRecord(team):
     return record
 
 
+
+
+
 def makeFlyer(match):
     """" Main function that creates the flyer by handling printing when passed a team """
+
+    # TODO: Make function or dictionary for team name 
     team1 = match["visiting team"]
     teamName1 = getTeamName(team1)
 
     team2 = match["home team"]
     teamName2 = getTeamName(team2)
 
+
+    # Start position as Shooting Guard because I generally have those 
     position1 = "SG"
     position2 = "SG"
 
@@ -208,22 +310,13 @@ def makeFlyer(match):
     W, H = 1080, 1080  # standard size of flyer
     im = Image.new("RGBA", (W, H), "white")  # create 1080x1080 image for flyer
 
-    position = ["PG", "SG", "SF", "PF", "C"]
-    try:
-        filename1 = fileFinder(os.path.join("Teams", teamName1, position1))
-    except FileNotFoundError:
-        while not os.path.exists(os.path.join("Teams",teamName1, position1)):
-            print(f"There is no {position1} in {teamName1}")
-            position1 = random.choice(position)
-        filename1 = fileFinder(os.path.join("Teams",teamName1, position1))
+    sp1 = searchPosition(teamName1, position1)
+    filename1 = sp1[0]
+    position1 = sp1[1]
 
-    try:
-        filename2 = fileFinder(os.path.join("Teams",teamName2, position2))
-    except FileNotFoundError:
-        while not os.path.exists(os.path.join("Teams",teamName2, position2)):
-            print(f"There is no {position2} in {teamName2}")
-            position2 = random.choice(position)
-        filename2 = fileFinder(os.path.join("Teams",teamName2, position2))
+    sp2 = searchPosition(teamName2, position2)
+    filename2 = sp2[0]
+    position2 = sp2[1]
 
     name1 = filename1.split(".")[0]
     name2 = filename2.split(".")[0]
@@ -248,7 +341,7 @@ def makeFlyer(match):
     player2 = aspectResize(player2, 550)
 
     draw = ImageDraw.Draw(im)  # make Draw object
-    font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 30)
+    font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 27)
 
     draw.text((450 / 2, 50), team1, fill="black", font=font, anchor="mm")
     draw.text((855, 50), team2, fill="black", font=font, anchor="mm")
@@ -259,32 +352,23 @@ def makeFlyer(match):
     w3, h3 = player2.size
     im.paste(player2, (int((1710 - w3) / 2), int((900 - h3) / 2)), player2)
 
-    # Change size of arena based on length
-    draw.text((1080 / 2, 50), match["arena"], fill="black", font=font, anchor="mm")
+    # Arena name
+    arena = getArenaName(match["arena"])
+    draw.text((1080 / 2, 50), arena[0], fill="black", font=font, anchor="mm")
+    draw.text((1080 / 2, 75), arena[1], fill="black", font=font, anchor="mm")
+
 
     print(team1)
     print(team2)
 
-    # Team and NBA Logos
-    vLogo = getLogo(team1)
-    vW, vH = vLogo.size
-    im.paste(vLogo, (int((1080 - vW) / 2), 300), vLogo)
-
-    hLogo = getLogo(team2)
-    hW, hH = hLogo.size
-    im.paste(hLogo, (int((1080 - hW) / 2), 610), hLogo)
-
+    # Team and NBA Logos    
+    logoPaste(team1,team2, im)
     draw.text((1080 / 2, 1080 / 2), "VS", fill="black", font=font, anchor="mm")
-
-    logo = Image.open("nbaLogo.png").convert("RGBA")
-    logo = logo.resize((100, 180))
-    w4, h4 = logo.size
-    im.paste(logo, (int((1080 - w4) / 2), 880), logo)
-
+    leagueLogo(im)
+    
     # Add record
     record1 = getRecord(teamName1)
     record2 = getRecord(teamName2)
-
     draw.text((450 / 2, 790), record1, fill="black", font=font, anchor="mm")
     draw.text((855, 790), record2, fill="black", font=font, anchor="mm")
 
@@ -302,63 +386,16 @@ def makeFlyer(match):
 
     im.show()
 
-
 today = date.today()
 
-if len(sys.argv) == 4:
-    d = sys.argv[1] + " " + sys.argv[2]
-    t = sys.argv[3]
-elif len(sys.argv) == 3:
-    d = sys.argv[1]
-    t = sys.argv[2]
-else:
-    print(" Please follow the format: nbaFlyerGen.py date team ie. nbaFlyerGen.py Nov 11 Timberwolves")
-    sys.exit()
+args = getArguments()
+search = args[0]
+team = args[1]
 
-if d.lower() == "today":
-    day = int(today.strftime("%d"))
-    m = today.strftime("%b")
-    d = m + " " + str(day)
 
-search = d
-team = t
+df = getPage(search)
 
-print(search)
-print(t)
-# Formatting the date
-month = datetime.strptime(search, "%b %d")
-month = month.strftime("%B").lower()
-
-if month != "October":
-    df = pd.read_html(f"https://www.basketball-reference.com/leagues/NBA_2023_games-{month}.html")
-else:
-    df = pd.read_html("https://www.basketball-reference.com/leagues/NBA_2023_games.html")
-
-games = []  # list of dictionarys
-
-p1Stats = {}
-p2Stats = {}
-
-# Format Date, Vistor, Home, Arena
-for i in range(len(df[0])):
-    date = df[0].loc[i][0].split(",")
-    match = {}
-    if search == date[1].strip() and team == "All":
-        print(f"{df[0].loc[i][2]} v. {df[0].loc[i][4]} ")
-        match["date"] = df[0].loc[i][0]
-        match["visiting team"] = df[0].loc[i][2]
-        match["home team"] = df[0].loc[i][4]
-        match["arena"] = df[0].loc[i][9]
-        games.append(match)
-
-    if search == date[1].strip() and (team in df[0].loc[i][2] or team in df[0].loc[i][4]):
-        print(f"{df[0].loc[i][2]} v. {df[0].loc[i][4]} ")
-
-        match["date"] = df[0].loc[i][0]
-        match["visiting team"] = df[0].loc[i][2]
-        match["home team"] = df[0].loc[i][4]
-        match["arena"] = df[0].loc[i][9]
-        games.append(match)
+games = getGames(df, search, team)
 
 print(games)
 
@@ -367,4 +404,4 @@ for match in games:
 
     time.sleep(15)
 
-print("done")
+print(f"{search} Games for {team} printed  ")
