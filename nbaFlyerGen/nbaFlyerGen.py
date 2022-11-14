@@ -33,6 +33,7 @@ position = ["PG", "SG", "SF", "PF", "C"]
 
 font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 27)
 
+
 def getArguments():
     """ Gets arguments for date and team. Also handles formatting of dates """
     if len(sys.argv) == 4:
@@ -48,7 +49,8 @@ def getArguments():
         day = int(today.strftime("%d"))
         m = today.strftime("%b")
         d = m + " " + str(day)
-    return d,t 
+    return d, t
+
 
 def fileFinder(path):
     """ Given a path will return a random file in the folder """
@@ -62,27 +64,32 @@ def fileFinder(path):
         print(f"{path} does not exist. Try a different position")
         raise FileNotFoundError
 
+
 def searchPosition(team, p):
     """ Given a team and position it will return a filename for a player of a certain position
      if it cant find one it will search until it finds something """
-     
-    while not os.path.exists(os.path.join("Teams",team, p)):
+
+    while not os.path.exists(os.path.join("Teams", team, p)):
         print(f"There is no {p} in {team}")
         p = random.choice(position)
-    filename = fileFinder(os.path.join("Teams",team, p))
+    filename = fileFinder(os.path.join("Teams", team, p))
     return [filename, p]
-   
+
+
 def getPage(time):
     """Given date it will format and return the proper link to scrape """
     month = datetime.strptime(time, "%b %d")
     month = month.strftime("%B").lower()
 
     if month != "October":
-        dataframe = pd.read_html(f"https://www.basketball-reference.com/leagues/NBA_2023_games-{month}.html")
+        dataframe = pd.read_html(
+            f"https://www.basketball-reference.com/leagues/NBA_2023_games-{month}.html")
     else:
-        dataframe = pd.read_html("https://www.basketball-reference.com/leagues/NBA_2023_games.html")
+        dataframe = pd.read_html(
+            "https://www.basketball-reference.com/leagues/NBA_2023_games.html")
 
     return dataframe
+
 
 def aspectResizeLogo(logo, size):
     """ Helps resize logos accordingly """
@@ -92,9 +99,10 @@ def aspectResizeLogo(logo, size):
     ratio = width / height
     return logo.resize((int(ratio * size), size))
 
+
 def aspectResize(image, size):
     """ Given a player image and a size it will adjust the image accordingly so they are close in scale """
-    # images given will be generally square or have a smaller with in comparison to height; also it will occupy a 450x800 space roughly 
+    # images given will be generally square or have a smaller with in comparison to height; also it will occupy a 450x800 space roughly
     image = cropImage(image)
     width, height = image.size
     if width / height > 1:
@@ -112,11 +120,13 @@ def aspectResize(image, size):
     else:
         return image.resize((size, size))
 
+
 def cropImage(image):
     """ Returns cropped version of image for optimal sizing """
     imageBox = image.getbbox()
     return image.crop(imageBox)
-    
+
+
 def getTeamName(team):
     """ Given full City and Team Name will return only Team Name """
     # teamName = ""
@@ -124,12 +134,15 @@ def getTeamName(team):
         return team.split()[1]
     else:
         return team.split()[2]
+
+
 def getArenaName(arena):
     """Given an arena name it breaks it up for formatting purposes [Arena Name, Arena Type]"""
     if len(arena.split()) == 3:
         return [arena.split()[0] + " " + arena.split()[1], arena.split()[2]]
     else:
         return [arena.split()[0], arena.split()[1]]
+
 
 def getGames(df, search, team):
     """ Returns list of dictionaries representing information about matches for given date for team depending on arguments """
@@ -154,6 +167,7 @@ def getGames(df, search, team):
             match["arena"] = df[0].loc[i][9]
             games.append(match)
     return games
+
 
 def getPlayer(name, team):
     """ Given player and team that he plays for returns link to player on basketball-reference"""
@@ -204,17 +218,21 @@ def getStats(df):
 
     return stats
 
-def printStats(s,draw,x):
+
+def printStats(s, draw, x):
     """Given a stat dictionary, draw object and x prints stats under the given x on the draw object"""
     i = 0
     for key, value in s.items():
         stat = f"{str(value)} {key}"
         draw.text((x, 850 + i), stat, fill="black", font=font, anchor="mm")
         i += 50
-    
-def printTeamText(draw,text1, x1, y1, text2, x2, y2):
+
+
+def printTeamText(draw, text1, x1, y1, text2, x2, y2):
+    """ Used when two things need to be printed on a draw object for both teams """
     draw.text((x1, y1), text1, fill="black", font=font, anchor="mm")
     draw.text((x2, y2), text2, fill="black", font=font, anchor="mm")
+
 
 def wikiLogo(name):
     """ Retrieves Logo from Wikipedia page """
@@ -238,7 +256,7 @@ def wikiLogo(name):
     r = requests.get(link)
     r.raise_for_status()
     teamName = getTeamName(name)
-    iFile = open(os.path.join("Teams",teamName, "logo.jpg"), "wb")
+    iFile = open(os.path.join("Teams", teamName, "logo.jpg"), "wb")
 
     for chunk in r.iter_content(100000):
         iFile.write(chunk)
@@ -249,12 +267,15 @@ def wikiLogo(name):
 
 def getLogo(team):
     """ Given a team will retrieve its logo open it as an image which is returned """
-    if os.path.exists(os.path.join("Teams",getTeamName(team), "logo.jpg")):
-        logo = Image.open(os.path.join("Teams",getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
+    if os.path.exists(os.path.join("Teams", getTeamName(team), "logo.jpg")):
+        logo = Image.open(os.path.join("Teams", getTeamName(
+            team), "logo.jpg")).convert("RGBA").resize((120, 120))
     else:
         wikiLogo(team)
-        logo = Image.open(os.path.join("Teams",getTeamName(team), "logo.jpg")).convert("RGBA").resize((120, 120))
-    return aspectResizeLogo(logo,120)
+        logo = Image.open(os.path.join("Teams", getTeamName(
+            team), "logo.jpg")).convert("RGBA").resize((120, 120))
+    return aspectResizeLogo(logo, 120)
+
 
 def leagueLogo(image):
     """Prints NBA League Logo onto given image object"""
@@ -263,7 +284,8 @@ def leagueLogo(image):
     w4, h4 = logo.size
     image.paste(logo, (int((1080 - w4) / 2), 880), logo)
 
-def logoPaste(visit,home,image):
+
+def logoPaste(visit, home, image):
     """ Given home and visiting team it will print their logo on the given image object"""
     logo1 = getLogo(visit)
     vW, vH = logo1.size
@@ -272,6 +294,7 @@ def logoPaste(visit,home,image):
     logo2 = getLogo(home)
     hW, hH = logo2.size
     image.paste(logo2, (int((1080 - hW) / 2), 610), logo2)
+
 
 def getRecord(team):
     """ Given team retrieves current record """
@@ -289,18 +312,18 @@ def getRecord(team):
     # print(opt)
     return record
 
+
 def makeFlyer(match):
     """" Main function that creates the flyer by handling printing when passed a team """
 
-    # TODO: Make function or dictionary for team name 
+    # TODO: Make function or dictionary for team name
     team1 = match["visiting team"]
     teamName1 = getTeamName(team1)
 
     team2 = match["home team"]
     teamName2 = getTeamName(team2)
 
-
-    # Start position as Shooting Guard because I generally have those 
+    # Start position as Shooting Guard because I generally have those
     position1 = "SG"
     position2 = "SG"
 
@@ -308,8 +331,7 @@ def makeFlyer(match):
     W, H = 1080, 1080  # standard size of flyer
     im = Image.new("RGBA", (W, H), "white")  # create 1080x1080 image for flyer
 
-
-    # Find random player of matching position in corresponding team folders 
+    # Find random player of matching position in corresponding team folders
     sp1 = searchPosition(teamName1, position1)
     filename1 = sp1[0]
     position1 = sp1[1]
@@ -333,8 +355,10 @@ def makeFlyer(match):
     stats2 = getStats(df2)
 
     # Load player images
-    player1 = Image.open(os.path.join("Teams",teamName1, position1, filename1)).convert("RGBA")
-    player2 = Image.open(os.path.join("Teams",teamName2, position2, filename2)).convert("RGBA")
+    player1 = Image.open(os.path.join("Teams", teamName1,
+                         position1, filename1)).convert("RGBA")
+    player2 = Image.open(os.path.join("Teams", teamName2,
+                         position2, filename2)).convert("RGBA")
 
     # Size them appropriately
     player1 = aspectResize(player1, 550)
@@ -343,10 +367,8 @@ def makeFlyer(match):
     draw = ImageDraw.Draw(im)  # make Draw object
     # font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 27)
 
-    printTeamText(draw, team1, 450/2,50, team2,855,50)
-    # draw.text((450 / 2, 50), team1, fill="black", font=font, anchor="mm")
-    # draw.text((855, 50), team2, fill="black", font=font, anchor="mm")
-
+    printTeamText(draw, team1, 450/2, 50, team2, 855, 50)
+   
     w2, h2 = player1.size
     im.paste(player1, (int((450 - w2) / 2), int((900 - h2) / 2)), player1)
 
@@ -356,29 +378,25 @@ def makeFlyer(match):
     # Arena name
     arena = getArenaName(match["arena"])
     printTeamText(draw, arena[0], 1080/2, 50, arena[1], 1080/2, 75)
-    # draw.text((1080 / 2, 50), arena[0], fill="black", font=font, anchor="mm")
-    # draw.text((1080 / 2, 75), arena[1], fill="black", font=font, anchor="mm")
-
 
     print(team1)
     print(team2)
 
-    # Team and NBA Logos    
-    logoPaste(team1,team2, im)
+    # Team and NBA Logos
+    logoPaste(team1, team2, im)
     draw.text((1080 / 2, 1080 / 2), "VS", fill="black", font=font, anchor="mm")
     leagueLogo(im)
-    
+
     # Add record
     record1 = getRecord(teamName1)
     record2 = getRecord(teamName2)
     printTeamText(draw, record1, 450/2, 790, record2, 855, 790)
-    # draw.text((450 / 2, 790), record1, fill="black", font=font, anchor="mm")
-    # draw.text((855, 790), record2, fill="black", font=font, anchor="mm")
 
     printStats(stats1, draw, 450/2)
     printStats(stats2, draw, 855)
 
     im.show()
+
 
 today = date.today()
 
