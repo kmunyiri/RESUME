@@ -31,6 +31,8 @@ teams = threeLetterTeams.teams
 # Make change later to reflect more positionless nature of the NBA
 position = ["PG", "SG", "SF", "PF", "C"]
 
+font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 27)
+
 def getArguments():
     """ Gets arguments for date and team. Also handles formatting of dates """
     if len(sys.argv) == 4:
@@ -202,18 +204,17 @@ def getStats(df):
 
     return stats
 
-# def printStats(s):
-
-#     i = 0
-#     for key, value in s.items():
-#         stat = f"{str(value)} {key}"
-#         draw.text((450 / 2, 850 + i), stat, fill="black", font=font, anchor="mm")
-#         i += 50
-#     i = 0
-#     for key, value in stats2.items():
-#         stat = f"{str(value)} {key}"
-#         draw.text((855, 850 + i), stat, fill="black", font=font, anchor="mm")
-#         i += 50
+def printStats(s,draw,x):
+    """Given a stat dictionary, draw object and x prints stats under the given x on the draw object"""
+    i = 0
+    for key, value in s.items():
+        stat = f"{str(value)} {key}"
+        draw.text((x, 850 + i), stat, fill="black", font=font, anchor="mm")
+        i += 50
+    
+def printTeamText(draw,text1, x1, y1, text2, x2, y2):
+    draw.text((x1, y1), text1, fill="black", font=font, anchor="mm")
+    draw.text((x2, y2), text2, fill="black", font=font, anchor="mm")
 
 def wikiLogo(name):
     """ Retrieves Logo from Wikipedia page """
@@ -256,13 +257,14 @@ def getLogo(team):
     return aspectResizeLogo(logo,120)
 
 def leagueLogo(image):
+    """Prints NBA League Logo onto given image object"""
     logo = Image.open("nbaLogo.png").convert("RGBA")
     logo = logo.resize((100, 180))
     w4, h4 = logo.size
     image.paste(logo, (int((1080 - w4) / 2), 880), logo)
 
-
 def logoPaste(visit,home,image):
+    """ Given home and visiting team it will print their logo on the given image object"""
     logo1 = getLogo(visit)
     vW, vH = logo1.size
     image.paste(logo1, (int((1080 - vW) / 2), 300), logo1)
@@ -287,10 +289,6 @@ def getRecord(team):
     # print(opt)
     return record
 
-
-
-
-
 def makeFlyer(match):
     """" Main function that creates the flyer by handling printing when passed a team """
 
@@ -310,6 +308,8 @@ def makeFlyer(match):
     W, H = 1080, 1080  # standard size of flyer
     im = Image.new("RGBA", (W, H), "white")  # create 1080x1080 image for flyer
 
+
+    # Find random player of matching position in corresponding team folders 
     sp1 = searchPosition(teamName1, position1)
     filename1 = sp1[0]
     position1 = sp1[1]
@@ -341,10 +341,11 @@ def makeFlyer(match):
     player2 = aspectResize(player2, 550)
 
     draw = ImageDraw.Draw(im)  # make Draw object
-    font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 27)
+    # font = ImageFont.truetype(os.path.join("cabal-font", "Cabal-w5j3.ttf"), 27)
 
-    draw.text((450 / 2, 50), team1, fill="black", font=font, anchor="mm")
-    draw.text((855, 50), team2, fill="black", font=font, anchor="mm")
+    printTeamText(draw, team1, 450/2,50, team2,855,50)
+    # draw.text((450 / 2, 50), team1, fill="black", font=font, anchor="mm")
+    # draw.text((855, 50), team2, fill="black", font=font, anchor="mm")
 
     w2, h2 = player1.size
     im.paste(player1, (int((450 - w2) / 2), int((900 - h2) / 2)), player1)
@@ -354,8 +355,9 @@ def makeFlyer(match):
 
     # Arena name
     arena = getArenaName(match["arena"])
-    draw.text((1080 / 2, 50), arena[0], fill="black", font=font, anchor="mm")
-    draw.text((1080 / 2, 75), arena[1], fill="black", font=font, anchor="mm")
+    printTeamText(draw, arena[0], 1080/2, 50, arena[1], 1080/2, 75)
+    # draw.text((1080 / 2, 50), arena[0], fill="black", font=font, anchor="mm")
+    # draw.text((1080 / 2, 75), arena[1], fill="black", font=font, anchor="mm")
 
 
     print(team1)
@@ -369,20 +371,12 @@ def makeFlyer(match):
     # Add record
     record1 = getRecord(teamName1)
     record2 = getRecord(teamName2)
-    draw.text((450 / 2, 790), record1, fill="black", font=font, anchor="mm")
-    draw.text((855, 790), record2, fill="black", font=font, anchor="mm")
+    printTeamText(draw, record1, 450/2, 790, record2, 855, 790)
+    # draw.text((450 / 2, 790), record1, fill="black", font=font, anchor="mm")
+    # draw.text((855, 790), record2, fill="black", font=font, anchor="mm")
 
-    # Stats
-    i = 0
-    for key, value in stats1.items():
-        stat = f"{str(value)} {key}"
-        draw.text((450 / 2, 850 + i), stat, fill="black", font=font, anchor="mm")
-        i += 50
-    i = 0
-    for key, value in stats2.items():
-        stat = f"{str(value)} {key}"
-        draw.text((855, 850 + i), stat, fill="black", font=font, anchor="mm")
-        i += 50
+    printStats(stats1, draw, 450/2)
+    printStats(stats2, draw, 855)
 
     im.show()
 
