@@ -324,8 +324,9 @@ def makeFlyer(match):
     teamName2 = getTeamName(team2)
 
     # Start position as Shooting Guard because I generally have those
-    position1 = "SG"
-    position2 = "SG"
+    pos = random.choice(position)
+    position1 = pos
+    position2 = pos
 
     # Flyer creation
     W, H = 1080, 1080  # standard size of flyer
